@@ -1,0 +1,14 @@
+groups:
+- name: tests
+  rules:
+    - alert: Check_LowDiskSpace_CHANGED_NAME
+      expr: node_filesystem_free_bytes{instance="node-exporter-ubuntu:9100", mountpoint="/", job="node-exporter"}/1024/1024/1024 < 49
+      for: 1m
+      labels:
+        alert_name: Check_LowDiskSpace
+        severity: info
+        alert_source: AM
+        alert_severity: info
+      annotations:
+        summary: "Some summary"
+        description: "Some description"

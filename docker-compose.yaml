@@ -22,26 +22,22 @@ services:
       - 9090:9090
     links:
       - alertmanager:alertmanager
+      - node-exporter-ubuntu:node-exporter-ubuntu
     depends_on: []
     networks:
       - back-tier
     restart: always
 
-  node-exporter:
-    image: quay.io/prometheus/node-exporter:latest
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-      - /:/host:ro,rslave
-    command:
-      - "--path.rootfs=/host"
-      - "--path.procfs=/host/proc"
-      - "--path.sysfs=/host/sys"
-      - --collector.filesystem.ignored-mount-points
-      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+  node-exporter-ubuntu:
+    image: ubuntu:mantic
+    command: /bin/bash -c "apt-get update && apt-get install -y curl && \
+      curl -LO https://github.com/prometheus/node_exporter/releases/download/v1.6.1/node_exporter-1.6.1.linux-amd64.tar.gz && \
+      tar xvfz node_exporter-1.6.1.linux-amd64.tar.gz && \
+      mv node_exporter-1.6.1.linux-amd64/node_exporter /usr/local/bin/ && \
+      rm -rf node_exporter-1.6.1.linux-amd64* && \
+      /usr/local/bin/node_exporter --collector.filesystem.fs-types-exclude='^devfs$'"
     ports:
-      - 9100:9100
+      - '9100:9100'
     networks:
       - back-tier
     restart: always
@@ -56,12 +52,12 @@ services:
       - back-tier
     restart: always
     links:
-      - http_server:http_server
+      - http-server:http-server
     command:
       - "--config.file=/etc/alertmanager/config.yml"
       - "--storage.path=/alertmanager"
 
-  http_server:
+  http-server:
     build: ./http_server/.
     environment:
       - SERVER_PORT=8080
